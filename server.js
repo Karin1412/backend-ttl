@@ -41,8 +41,10 @@ const NotificationSchema = new mongoose.Schema({
 });
 const MemorySchema = new mongoose.Schema({
   content: String,
+  images: [String], 
   date: { type: Date, default: Date.now },
 });
+
 const AlbumSchema = new mongoose.Schema({
   name: String,
   photos: [String],
@@ -91,6 +93,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
 app.post("/albums", async (req, res) => {
   const newAlbum = new Album({ name: req.body.name, photos: [] });
   await newAlbum.save();
@@ -105,11 +108,18 @@ app.post("/albums/:id/photos", upload.single("photo"), async (req, res) => {
   res.json(album);
 });
 
-app.post("/memories", async (req, res) => {
-  const newMemory = new Memory(req.body);
+app.post("/memories", upload.array("images", 5), async (req, res) => {
+  const imagePaths = req.files.map((file) => `/uploads/${file.filename}`); 
+
+  const newMemory = new Memory({
+    content: req.body.content,
+    images: imagePaths, // Lưu danh sách ảnh vào database
+  });
+
   await newMemory.save();
   res.json(newMemory);
 });
+
 
 app.get("/love-day/count", (req, res) => {
   const today = new Date();
